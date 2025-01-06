@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logo from '../../assets/logo.png';
+import './Login.css'
 
 function Login() {
   const navigate = useNavigate();
@@ -43,22 +45,30 @@ function Login() {
   };
 
   return (
-    <div>
+    <div className='login-wrapper'>
+    <img className='login-logo' src={logo} alt='app-logo'/>
+ 
+        <div className='login-wrapper2'>
       <h1>Sign in</h1>
       <p>Welcome back!</p>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={handleSubmit}>
+        <div className="login-input-box">
         <label>Email:</label>
         <input type="email" name="email" value={userData.email} onChange={handleChange} />
         <br />
+        </div>
+        <div className="login-input-box">
         <label>Password:</label>
         <input type="password" name="password" value={userData.password} onChange={handleChange} />
         <br />
+        </div>
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Loading...' : 'Sign in'}
         </button>
-        <p>Don't have an account yet? <a href="/signup">Sign Up</a> </p>
+        <p>Don't have an account yet? <a href="/signup">Sign Up</a></p>
       </form>
+      </div>
     </div>
   );
 }
