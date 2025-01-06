@@ -57,7 +57,7 @@ function Login() {
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Loading...' : 'Sign in'}
         </button>
-        <p>Don't have an account yet? <a href="/signup">Sign Up</a></p>
+        <p>Don't have an account yet? <a href="/signup">Sign Up</a> </p>
       </form>
     </div>
   );
