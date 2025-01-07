@@ -32,11 +32,11 @@ const TopBar = () => {
                 </ul>
             </div> */}
 
-            <div class="top-bar-account">
+            <div className="top-bar-account">
             <ul>
-                <li class="dropdown">
+                <li className="dropdown">
                 <a href="#">My Account</a>
-                <ul class="dropdown-menu">
+                <ul className="dropdown-menu">
                     <li><a href="/account">Account</a></li>
                     <li><a href="/signout">Sign out</a></li>
                 </ul>
