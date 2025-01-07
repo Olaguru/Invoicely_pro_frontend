@@ -106,7 +106,7 @@ function CreateInvoice() {
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  };  
   
 
   const handleSubmit = async (e) => {
@@ -123,6 +123,10 @@ function CreateInvoice() {
   
     const formData = new FormData();
     Object.keys(invoice).forEach((key) => {
+      if (key === 'logo' && !invoice[key]) {
+        // Do not append the logo key if the logo is not provided
+        return;
+      }
       formData.append(key, invoice[key]);
     });
   

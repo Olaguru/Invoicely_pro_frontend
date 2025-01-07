@@ -14,7 +14,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
-        const response = await fetch('/api/invoices/', {
+        const response = await fetch('http://127.0.0.1:8000/api/invoices/', { // Make sure the URL is correct
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -41,7 +41,7 @@ const Dashboard = () => {
   // Mark as Paid handler
   const markAsPaid = async (id) => {
     try {
-      const response = await fetch(`/api/invoices/${id}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/invoices/${id}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -70,7 +70,7 @@ const Dashboard = () => {
     if (!window.confirm('Are you sure you want to delete this invoice?')) return;
 
     try {
-      const response = await fetch(`/api/invoices/${id}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/invoices/${id}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -127,7 +127,7 @@ const Dashboard = () => {
                     <button className="dropdown-button">View</button>
                     <ul className="dropdown-menu">
                       <li>
-                        <a href={`/api/invoices/${invoice.id}/download`}>Download</a>
+                        <a href={`http://127.0.0.1:8000/api/invoices/${invoice.id}/download`}>Download</a>
                       </li>
                       <li>
                         <button onClick={() => navigate(`/edit/${invoice.id}`)}>Edit</button>
