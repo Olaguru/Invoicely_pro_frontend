@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import TopBar from '../Topbar/TopBar';
 import Footer from '../Footer/Footer';
 import './Dashboard.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // route me to different routes
 
 const Dashboard = () => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dropdownVisible, setDropdownVisible] = useState(null); // State to track which dropdown is visible
   const navigate = useNavigate();
-  const accessToken = localStorage.getItem('accessToken'); // Assuming token is stored in localStorage
+  const accessToken = localStorage.getItem('accessToken'); // fetch token from localStorage
 
   // Fetch invoices on component mount
   useEffect(() => {
@@ -47,7 +48,7 @@ const Dashboard = () => {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: 'Paid' }),
+        body: JSON.stringify({ status: 'paid' }),
       });
 
       if (!response.ok) {
@@ -89,6 +90,38 @@ const Dashboard = () => {
     }
   };
 
+  // Download invoice handler
+  const downloadInvoice = async (id) => {
+    const accessToken = localStorage.getItem('accessToken');
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/invoices/${id}/pdf`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice_${id}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        throw new Error(`Error downloading invoice: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+    }
+  };
+
+  // Toggle dropdown visibility
+  const toggleDropdown = (id) => {
+    setDropdownVisible((prev) => (prev === id ? null : id));
+  };
+
   if (loading) return <div>Loading...</div>;
 
   return (
@@ -124,21 +157,19 @@ const Dashboard = () => {
                 <td>{invoice.balance_due}</td>
                 <td>
                   <div className="dropdown">
-                    <button className="dropdown-button">View</button>
-                    <ul className="dropdown-menu">
-                      <li>
-                        <a href={`http://127.0.0.1:8000/api/invoices/${invoice.id}/download`}>Download</a>
-                      </li>
-                      <li>
-                        <button onClick={() => navigate(`/edit/${invoice.id}`)}>Edit</button>
-                      </li>
-                      <li>
-                        <button onClick={() => markAsPaid(invoice.id)}>Mark as Paid</button>
-                      </li>
-                      <li>
+                    <button className="dropdown-button" onClick={() => toggleDropdown(invoice.id)}>View</button>
+                    {dropdownVisible === invoice.id && (
+                      <div className="dropdown-content">
+                        <button onClick={() => downloadInvoice(invoice.id)}>Download</button>
+                        {invoice.status !== 'Paid' ? (
+                          <>
+                            <button onClick={() => navigate(`/edit/${invoice.id}`)}>Edit</button>
+                            <button onClick={() => markAsPaid(invoice.id)}>Mark as Paid</button>
+                          </>
+                        ) : null}
                         <button onClick={() => deleteInvoice(invoice.id)}>Delete</button>
-                      </li>
-                    </ul>
+                      </div>
+                    )}
                   </div>
                 </td>
               </tr>
