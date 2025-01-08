@@ -50,22 +50,27 @@ const Dashboard = () => {
         },
         body: JSON.stringify({ status: 'paid' }),
       });
-
+  
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
       }
-
+  
+      // Update the state to reflect the change immediately
       setInvoices((prev) =>
         prev.map((invoice) =>
-          invoice.id === id ? { ...invoice, status: 'Paid' } : invoice
+          invoice.id === id ? { ...invoice, status: 'paid' } : invoice
         )
       );
+  
+      // Optionally close the dropdown after marking as paid
+      setDropdownVisible(null);
+  
       alert('Invoice marked as Paid');
     } catch (error) {
       console.error('Error marking invoice as Paid:', error);
     }
   };
-
+  
   // Delete handler
   const deleteInvoice = async (id) => {
     if (!window.confirm('Are you sure you want to delete this invoice?')) return;
@@ -160,14 +165,17 @@ const Dashboard = () => {
                     <button className="dropdown-button" onClick={() => toggleDropdown(invoice.id)}>View</button>
                     {dropdownVisible === invoice.id && (
                       <div className="dropdown-content">
+                        {/* Always show Download and Delete */}
                         <button onClick={() => downloadInvoice(invoice.id)}>Download</button>
-                        {invoice.status !== 'Paid' ? (
+                        <button onClick={() => deleteInvoice(invoice.id)}>Delete</button>
+
+                        {/* Only show Edit and Mark as Paid if not Paid */}
+                        {invoice.status !== 'paid' && (
                           <>
                             <button onClick={() => navigate(`/edit/${invoice.id}`)}>Edit</button>
                             <button onClick={() => markAsPaid(invoice.id)}>Mark as Paid</button>
                           </>
-                        ) : null}
-                        <button onClick={() => deleteInvoice(invoice.id)}>Delete</button>
+                        )}
                       </div>
                     )}
                   </div>
