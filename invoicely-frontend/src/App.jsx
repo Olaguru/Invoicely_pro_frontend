@@ -6,6 +6,7 @@ import Login from './Components/Login/Login';
 import Dashboard from './Components/Dashboard/Dashboard';
 import CreateInvoice from './Components/Create/Create';
 import ProtectedRoute from './Components/ProtectedRoute.jsx'; // Import your ProtectedRoute component
+import EditInvoice from './Components/Create/EditInvoice.jsx';
 
 function App() {
   return (
@@ -35,6 +36,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/edit/:id"
+          element={
+            <ProtectedRoute>
+              <EditInvoice/>
+            </ProtectedRoute>
+          }
+          />
       </Routes>
     </BrowserRouter>
   );

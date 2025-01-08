@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom'; // useParams to get the invoice ID from the URL
 import './Create.css';
 
-function CreateInvoice() {
+function EditInvoice() {
   const navigate = useNavigate();
+  const { id } = useParams(); // Get invoice ID from the URL
   const [invoice, setInvoice] = useState({
     invoice_number: '',
     date: '',
@@ -23,17 +24,45 @@ function CreateInvoice() {
 
   const [items, setItems] = useState([
     {
-      description: 'Item 1', // Provide a placeholder or default description
-      quantity: 1,           // Default positive quantity
-      rate: 1,               // Default positive rate
-      amount: 1,             // Calculate based on default values
+      description: 'Item 1', 
+      quantity: 1,           
+      rate: 1,               
+      amount: 1,             
     },
   ]);
   
-
   const [currency, setCurrency] = useState('USD');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Fetch the invoice data on component mount
+    const fetchInvoice = async () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/api/invoices/${id}/`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setInvoice(data);
+          setItems(data.items); // Assuming the invoice contains an array of items
+        } else {
+          console.error('Error fetching invoice:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    fetchInvoice();
+  }, [id]);
 
   useEffect(() => {
     calculateBalanceDue();
@@ -80,20 +109,20 @@ function CreateInvoice() {
   };
 
   const calculateBalanceDue = () => {
-    const subtotal = calculateSubtotal();
-    const tax = (subtotal * (parseFloat(invoice.tax) || 0)) / 100; // Ensure tax is a number
-    const discount = parseFloat(invoice.discount) || 0;           // Convert discount to a number
-    const shipment = parseFloat(invoice.shipment) || 0;           // Convert shipment to a number
-    const amountPaid = parseFloat(invoice.amount_paid) || 0;      // Convert amount paid to a number
-  
-    const balanceDue = subtotal + tax - discount + shipment - amountPaid;
-  
-    setInvoice((prevState) => ({
-      ...prevState,
-      balance_due: balanceDue,
-    }));
-  };
-  
+  const subtotal = calculateSubtotal();
+  const tax = (subtotal * (parseFloat(invoice.tax) || 0)) / 100; // Ensure tax is a number
+  const discount = parseFloat(invoice.discount) || 0;           // Convert discount to a number
+  const shipment = parseFloat(invoice.shipment) || 0;           // Convert shipment to a number
+  const amountPaid = parseFloat(invoice.amount_paid) || 0;      // Convert amount paid to a number
+
+  const balanceDue = subtotal + tax - discount + shipment - amountPaid;
+
+  setInvoice((prevState) => ({
+    ...prevState,
+    balance_due: balanceDue,
+  }));
+};
+
 
   const validateForm = () => {
     const newErrors = {};
@@ -109,54 +138,52 @@ function CreateInvoice() {
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };  
-  
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-  
+
     setLoading(true);
-    const token = localStorage.getItem('accessToken'); // Assuming token is stored
+    const token = localStorage.getItem('accessToken');
     if (!token) {
       console.error('Access token is missing');
       setLoading(false);
       return;
     }
-  
+
     const formData = new FormData();
     Object.keys(invoice).forEach((key) => {
       if (key === 'logo' && !invoice[key]) {
-        // Do not append the logo key if the logo is not provided
         return;
       }
       formData.append(key, invoice[key]);
     });
-  
+
     items.forEach((item, index) => {
       formData.append(`items[${index}][description]`, item.description);
       formData.append(`items[${index}][quantity]`, item.quantity);
       formData.append(`items[${index}][rate]`, item.rate);
       formData.append(`items[${index}][amount]`, item.amount);
     });
-  
+
     formData.append('subtotal', calculateSubtotal());
     formData.append('currency', currency);
-  
+
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/invoices/', {
-        method: 'POST',
+      const response = await fetch(`http://127.0.0.1:8000/api/invoices/${id}/`, {
+        method: 'PATCH', // Use PATCH to update the invoice
         headers: {
           Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
-  
-      const data = await response.json();
-      if (response.status === 201) {
+
+      if (response.status === 200) {
         navigate('/dashboard');
       } else {
-        setErrors(data); // Assume the API returns validation errors in `data`
+        const data = await response.json();
+        setErrors(data);
         console.error('Error:', data);
       }
     } catch (error) {
@@ -164,17 +191,17 @@ function CreateInvoice() {
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   return (
     <div className="create-invoice-container">
-      <h1>Create Invoice</h1>
+      <h1>Edit Invoice</h1>
       <form onSubmit={handleSubmit} encType="multipart/form-data">
         <div className="form-group">
           <label>Logo</label>
           <input type="file" name="logo" onChange={handleInvoiceChange} />
         </div>
-  
+        
         <div className="form-group">
           <label>Invoice No</label>
           <input
@@ -184,9 +211,8 @@ function CreateInvoice() {
             onChange={handleInvoiceChange}
             className={errors.invoice_number ? 'error' : ''}
           />
-          {errors.invoice_number && <span className="error-message">{errors.invoice_number}</span>}
         </div>
-  
+
         <div className="form-group">
           <label>Sender</label>
           <input
@@ -196,9 +222,8 @@ function CreateInvoice() {
             onChange={handleInvoiceChange}
             className={errors.sender ? 'error' : ''}
           />
-          {errors.sender && <span className="error-message">{errors.sender}</span>}
         </div>
-  
+
         <div className="form-group">
           <label>Customer Name</label>
           <input
@@ -208,9 +233,8 @@ function CreateInvoice() {
             onChange={handleInvoiceChange}
             className={errors.customer_name ? 'error' : ''}
           />
-          {errors.customer_name && <span className="error-message">{errors.customer_name}</span>}
         </div>
-  
+
         <div className="form-group">
           <label>Date</label>
           <input
@@ -218,11 +242,9 @@ function CreateInvoice() {
             name="date"
             value={invoice.date}
             onChange={handleInvoiceChange}
-            className={errors.date ? 'error' : ''}
           />
-          {errors.date && <span className="error-message">{errors.date}</span>}
         </div>
-  
+
         <div className="form-group">
           <label>Payment Terms</label>
           <input
@@ -232,7 +254,7 @@ function CreateInvoice() {
             onChange={handleInvoiceChange}
           />
         </div>
-  
+
         <div className="form-group">
           <label>Due Date</label>
           <input
@@ -240,11 +262,9 @@ function CreateInvoice() {
             name="due_date"
             value={invoice.due_date}
             onChange={handleInvoiceChange}
-            className={errors.due_date ? 'error' : ''}
           />
-          {errors.due_date && <span className="error-message">{errors.due_date}</span>}
         </div>
-  
+
         <div className="form-group">
           <label>PO Number</label>
           <input
@@ -254,7 +274,7 @@ function CreateInvoice() {
             onChange={handleInvoiceChange}
           />
         </div>
-  
+
         <h2>Items</h2>
         <table>
           <thead>
@@ -275,7 +295,6 @@ function CreateInvoice() {
                     name="description"
                     value={item.description}
                     onChange={(e) => handleItemChange(e, index)}
-                    className={errors.items ? 'error' : ''}
                   />
                 </td>
                 <td>
@@ -284,7 +303,6 @@ function CreateInvoice() {
                     name="quantity"
                     value={item.quantity}
                     onChange={(e) => handleItemChange(e, index)}
-                    className={errors.items ? 'error' : ''}
                   />
                 </td>
                 <td>
@@ -293,7 +311,6 @@ function CreateInvoice() {
                     name="rate"
                     value={item.rate}
                     onChange={(e) => handleItemChange(e, index)}
-                    className={errors.items ? 'error' : ''}
                   />
                 </td>
                 <td>
@@ -308,14 +325,11 @@ function CreateInvoice() {
             ))}
           </tbody>
         </table>
-  
-        {errors.items && <span className="error-message">{errors.items}</span>}
-  
+
         <button type="button" onClick={handleAddItem}>
           Add Item
-          <br />
         </button>
-  
+
         <div className="form-group">
           <label>Notes</label>
           <textarea
@@ -324,52 +338,43 @@ function CreateInvoice() {
             onChange={handleInvoiceChange}
           ></textarea>
         </div>
-  
+
         <div className="form-group">
           <label>Subtotal</label>
           <input type="number" name="subtotal" value={calculateSubtotal()} readOnly />
         </div>
-  
+
         <div className="form-group">
           <label>Tax(%)</label>
           <input type="number" name="tax" value={invoice.tax} onChange={handleInvoiceChange} />
         </div>
-  
+
         <div className="form-group">
           <label>Discount</label>
           <input type="number" name="discount" value={invoice.discount} onChange={handleInvoiceChange} />
         </div>
-  
+
         <div className="form-group">
           <label>Shipment</label>
           <input type="number" name="shipment" value={invoice.shipment} onChange={handleInvoiceChange} />
         </div>
-  
+
         <div className="form-group">
           <label>Amount Paid</label>
           <input type="number" name="amount_paid" value={invoice.amount_paid} onChange={handleInvoiceChange} />
         </div>
-  
+
         <div className="form-group">
           <label>Balance Due</label>
           <input type="number" name="balance_due" value={invoice.balance_due} readOnly />
         </div>
-  
-        <div className="form-group">
-          <label>Currency</label>
-          <select name="currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="NGN">NGN</option>
-          </select>
-        </div>
-  
+
         <button type="submit" disabled={loading}>
-          {loading ? 'Creating...' : 'Create Invoice'}
+          {loading ? 'Saving...' : 'Save Invoice'}
         </button>
       </form>
     </div>
   );
 }
 
-export default CreateInvoice;
+export default EditInvoice;
